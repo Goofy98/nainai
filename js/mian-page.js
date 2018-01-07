@@ -39,7 +39,7 @@
                         'top': 50 + 'px',
                         'opacity' : 0
                     }, 200)
-                    $(this).children("ul").fadeOut(10);
+                    $(this).children("ul").hide(1);
                     
                 }
                 );
