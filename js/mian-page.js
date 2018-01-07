@@ -24,11 +24,12 @@
                 function(){
                     var is = $(this);
                     t=setTimeout(function(){
-                    	$(is).children("ul").fadeIn();
+                    	
                         $(is).children("ul").animate({
                             'top': 40 + 'px',
                             'opacity': 1
                         }, 200)
+                        $(is).children("ul").show();
                     },1000);
                 },
                 function(){
@@ -36,9 +37,10 @@
                     
                     $(this).children("ul").animate({
                         'top': 50 + 'px',
-                        'opacity': 0
+                        'opacity' : 0
                     }, 200)
-                    $(this).children("ul").fadeOut();
+                    $(this).children("ul").fadeOut(10);
+                    
                 }
                 );
         });
