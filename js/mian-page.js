@@ -24,18 +24,21 @@
                 function(){
                     var is = $(this);
                     t=setTimeout(function(){
+                    	$(is).children("ul").fadeIn();
                         $(is).children("ul").animate({
                             'top': 40 + 'px',
                             'opacity': 1
-                        }, 200).addClass("dis");
+                        }, 200)
                     },1000);
                 },
                 function(){
                     clearTimeout(t);
+                    
                     $(this).children("ul").animate({
                         'top': 50 + 'px',
                         'opacity': 0
-                    }, 200).removeClass("dis");
+                    }, 200)
+                    $(this).children("ul").fadeOut();
                 }
                 );
         });
