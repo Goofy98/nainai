@@ -1,0 +1,320 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>402班作文拍照打卡与导出</title>
+<style>
+:root{
+  --bg:#f5f7fb; --card:#fff; --text:#1f2937; --muted:#6b7280;
+  --primary:#2563eb; --primary2:#1d4ed8; --green:#16a34a; --red:#dc2626;
+  --line:#e5e7eb; --amber:#f59e0b;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",Arial,sans-serif;background:var(--bg);color:var(--text)}
+header{position:sticky;top:0;z-index:20;background:rgba(255,255,255,.95);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.wrap{max-width:1180px;margin:auto;padding:18px 20px}
+.top{display:flex;gap:16px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+h1{font-size:24px;margin:0}
+.sub{color:var(--muted);font-size:13px;margin-top:5px}
+.controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+input[type=search]{width:220px;padding:10px 12px;border:1px solid #d1d5db;border-radius:10px;font-size:14px}
+button{border:0;border-radius:10px;padding:10px 14px;font-size:14px;font-weight:600;cursor:pointer}
+.btn-primary{background:var(--primary);color:#fff}.btn-primary:hover{background:var(--primary2)}
+.btn-secondary{background:#eef2ff;color:#3730a3}
+.btn-danger{background:#fee2e2;color:#991b1b}
+.stats{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+.stat{background:#f8fafc;border:1px solid var(--line);border-radius:999px;padding:7px 11px;font-size:13px}
+.notice{background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;border-radius:12px;padding:12px 14px;margin:18px 0;font-size:14px;line-height:1.7}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:15px;padding:14px;box-shadow:0 1px 2px rgba(0,0,0,.03)}
+.card.has-files{border-color:#86efac;background:#fafffb}
+.student-head{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.student-name{font-size:18px;font-weight:700}
+.student-no{font-size:12px;color:var(--muted);font-weight:500;margin-left:8px}
+.badge{font-size:12px;border-radius:999px;padding:5px 9px;background:#f3f4f6;color:#4b5563}
+.badge.done{background:#dcfce7;color:#166534}
+.actions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.upload-label{display:inline-flex;align-items:center;justify-content:center;background:#eff6ff;color:#1d4ed8;border:1px dashed #93c5fd;border-radius:9px;padding:8px 11px;font-size:13px;font-weight:600;cursor:pointer}
+.upload-label:hover{background:#dbeafe}
+.upload-label{min-height:44px;user-select:none;-webkit-tap-highlight-color:transparent}
+@media(max-width:600px){.upload-label{width:100%;padding:13px;font-size:16px}.actions{width:100%}}
+.file-input{display:none}
+.small-btn{padding:8px 10px;font-size:12px;background:#f3f4f6;color:#374151}
+.small-btn.red{background:#fee2e2;color:#991b1b}
+.thumbs{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}
+.thumb{position:relative;aspect-ratio:1/1;border:1px solid var(--line);border-radius:9px;overflow:hidden;background:#f9fafb}
+.thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.thumb .remove{position:absolute;right:3px;top:3px;width:23px;height:23px;border-radius:50%;padding:0;background:rgba(0,0,0,.65);color:#fff;font-size:14px;line-height:23px}
+.thumb .idx{position:absolute;left:3px;bottom:3px;background:rgba(0,0,0,.62);color:#fff;font-size:10px;border-radius:6px;padding:2px 5px}
+.empty{margin-top:12px;color:#9ca3af;font-size:13px;padding:10px 0}
+footer{color:#9ca3af;text-align:center;font-size:12px;padding:30px 15px}
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:100;align-items:center;justify-content:center;padding:20px}
+.modal.show{display:flex}
+.modalbox{background:#fff;max-width:500px;width:100%;border-radius:16px;padding:22px}
+.progress{height:10px;background:#e5e7eb;border-radius:999px;overflow:hidden;margin:16px 0}
+.progress>div{height:100%;width:0;background:var(--primary);transition:width .15s}
+@media(max-width:600px){
+ .wrap{padding:14px}
+ .grid{grid-template-columns:1fr}
+ .controls{width:100%}
+ input[type=search]{flex:1;min-width:150px;width:auto}
+ h1{font-size:20px}
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="top">
+      <div>
+        <h1>402班作文拍照打卡</h1>
+        <div class="sub">找到学生 → 点击拍照 → 连续拍摄多页作文 → 一键导出全班 ZIP</div>
+      </div>
+      <div class="controls">
+        <input id="search" type="search" placeholder="搜索学生姓名 / 学号">
+        <button id="clearAll" class="btn-danger">清空全部</button>
+        <button id="exportZip" class="btn-primary">导出全班 ZIP</button>
+      </div>
+    </div>
+    <div class="stats">
+      <span class="stat">全班 <b id="totalStudents">0</b> 人</span>
+      <span class="stat">已上传 <b id="uploadedStudents">0</b> 人</span>
+      <span class="stat">图片共 <b id="totalImages">0</b> 张</span>
+      <span class="stat">未上传 <b id="missingStudents">0</b> 人</span>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="notice">
+    <b>使用说明：</b>找到对应学生后，点击“📷 点击拍照”打开手机相机。每拍完一张可再次点击继续拍，适合多页作文。只有 1 张时导出为
+    <b>姓名.扩展名</b>；有多张时依次导出为 <b>姓名-1.扩展名、姓名-2.扩展名……</b>。
+    照片只保存在当前浏览器内存中，不会上传到网络；<b>刷新或关闭页面后需重新拍摄</b>。建议全部拍好后立即导出 ZIP。
+  </div>
+  <div id="grid" class="grid"></div>
+</main>
+
+<footer>402班作文拍照工具 · 本地离线版</footer>
+
+<div id="modal" class="modal">
+  <div class="modalbox">
+    <h3 style="margin:0">正在生成压缩包</h3>
+    <div id="progressText" style="color:#6b7280;margin-top:8px;font-size:14px">准备中……</div>
+    <div class="progress"><div id="progressBar"></div></div>
+    <div style="font-size:12px;color:#9ca3af">图片较多时，请保持页面打开。</div>
+  </div>
+</div>
+
+<script>
+const students = [{"no": "1", "name": "曾铱琳"}, {"no": "2", "name": "陈嘉俊"}, {"no": "3", "name": "陈玟惠"}, {"no": "4", "name": "陈雅琪"}, {"no": "5", "name": "陈雨桐"}, {"no": "6", "name": "戴楚曦"}, {"no": "7", "name": "冯浩洋"}, {"no": "8", "name": "甘美馨"}, {"no": "9", "name": "高海宁"}, {"no": "10", "name": "胡皓铭"}, {"no": "11", "name": "黄泽子衿"}, {"no": "12", "name": "黄梓茵"}, {"no": "13", "name": "黄紫婷"}, {"no": "14", "name": "冀佳睿"}, {"no": "15", "name": "姜隽林"}, {"no": "16", "name": "匡乃馨"}, {"no": "17", "name": "李宝恩"}, {"no": "18", "name": "李俊乐"}, {"no": "19", "name": "李糖"}, {"no": "20", "name": "李庭锐"}, {"no": "21", "name": "梁宏谦"}, {"no": "22", "name": "梁佩岚"}, {"no": "23", "name": "梁钰莹"}, {"no": "24", "name": "林宏浚"}, {"no": "25", "name": "林睿航"}, {"no": "26", "name": "林怡博"}, {"no": "27", "name": "林雨馨"}, {"no": "28", "name": "林芷滢"}, {"no": "29", "name": "林子禄"}, {"no": "30", "name": "刘楚牧云"}, {"no": "31", "name": "刘芯绮"}, {"no": "32", "name": "卢泽锋"}, {"no": "33", "name": "伦欣怡"}, {"no": "34", "name": "彭芯怡"}, {"no": "35", "name": "彭溢帆"}, {"no": "36", "name": "苏琳允"}, {"no": "37", "name": "谭倩桐"}, {"no": "38", "name": "唐梓清"}, {"no": "39", "name": "王程"}, {"no": "40", "name": "王艺善"}, {"no": "41", "name": "杨韵意"}, {"no": "42", "name": "余佳佳"}, {"no": "43", "name": "张欣雨"}, {"no": "44", "name": "张颖"}, {"no": "45", "name": "张梓昊"}, {"no": "46", "name": "郑馨悦"}, {"no": "47", "name": "周子涵"}];
+const filesByStudent = new Map(students.map(s => [s.name, []]));
+const grid = document.getElementById('grid');
+const search = document.getElementById('search');
+
+function safeExt(file){
+  const name = file.name || '';
+  const m = name.match(/\.([a-zA-Z0-9]{1,10})$/);
+  if(m) return '.' + m[1].toLowerCase();
+  const map = {'image/jpeg':'.jpg','image/png':'.png','image/webp':'.webp','image/heic':'.heic','image/heif':'.heif','image/gif':'.gif'};
+  return map[file.type] || '.jpg';
+}
+function esc(s){
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function render(){
+  const q = search.value.trim().toLowerCase();
+  grid.innerHTML = '';
+  students.filter(s => !q || s.name.toLowerCase().includes(q) || String(s.no).includes(q)).forEach(s => {
+    const fs = filesByStudent.get(s.name) || [];
+    const card = document.createElement('section');
+    card.className = 'card' + (fs.length ? ' has-files' : '');
+    card.dataset.name = s.name;
+    card.innerHTML = `
+      <div class="student-head">
+        <div class="student-name">${esc(s.name)} <span class="student-no">学号 ${esc(s.no)}</span></div>
+        <span class="badge ${fs.length?'done':''}">${fs.length ? fs.length+' 张' : '未上传'}</span>
+      </div>
+      <div class="actions">
+        <label class="upload-label">📷 点击拍照
+          <input class="file-input" type="file" accept="image/*" capture="environment">
+        </label>
+        ${fs.length ? '<button class="small-btn red clear-one">清空该生</button>' : ''}
+      </div>
+      ${fs.length ? '<div class="thumbs"></div>' : '<div class="empty">还没有拍摄作文照片</div>'}
+    `;
+    const input = card.querySelector('.file-input');
+    input.addEventListener('change', e => {
+      const arr = [...e.target.files].filter(f => f.type.startsWith('image/') || /\.(jpe?g|png|webp|gif|heic|heif)$/i.test(f.name));
+      if(arr.length) filesByStudent.set(s.name, [...filesByStudent.get(s.name), ...arr]);
+      input.value = '';
+      render();
+    });
+    const clearBtn = card.querySelector('.clear-one');
+    if(clearBtn) clearBtn.addEventListener('click', () => {
+      if(confirm(`确定清空 ${s.name} 的全部图片吗？`)){
+        filesByStudent.set(s.name, []);
+        render();
+      }
+    });
+    if(fs.length){
+      const thumbs = card.querySelector('.thumbs');
+      fs.forEach((f, idx) => {
+        const d = document.createElement('div');
+        d.className = 'thumb';
+        const img = document.createElement('img');
+        const url = URL.createObjectURL(f);
+        img.src = url;
+        img.onload = () => URL.revokeObjectURL(url);
+        img.onerror = () => { img.style.display='none'; d.style.background='#f3f4f6'; };
+        const countLabel = fs.length === 1 ? s.name : `${s.name}-${idx+1}`;
+        d.innerHTML = `<button class="remove" title="删除">×</button><div class="idx">${esc(countLabel)}</div>`;
+        d.prepend(img);
+        d.querySelector('.remove').addEventListener('click', () => {
+          const cur = [...filesByStudent.get(s.name)];
+          cur.splice(idx,1);
+          filesByStudent.set(s.name, cur);
+          render();
+        });
+        thumbs.appendChild(d);
+      });
+    }
+    grid.appendChild(card);
+  });
+  updateStats();
+}
+function updateStats(){
+  let up=0, imgs=0;
+  students.forEach(s => {
+    const n=(filesByStudent.get(s.name)||[]).length;
+    if(n) up++;
+    imgs += n;
+  });
+  document.getElementById('totalStudents').textContent = students.length;
+  document.getElementById('uploadedStudents').textContent = up;
+  document.getElementById('totalImages').textContent = imgs;
+  document.getElementById('missingStudents').textContent = students.length-up;
+}
+search.addEventListener('input', render);
+document.getElementById('clearAll').addEventListener('click', ()=>{
+  if(!confirm('确定清空全班已选择的所有图片吗？此操作不可撤销。')) return;
+  students.forEach(s => filesByStudent.set(s.name, []));
+  render();
+});
+
+// ---- Pure JS offline ZIP writer (store/no compression) ----
+const crcTable = (() => {
+  const t = new Uint32Array(256);
+  for(let n=0;n<256;n++){
+    let c=n;
+    for(let k=0;k<8;k++) c=(c&1)?(0xEDB88320^(c>>>1)):(c>>>1);
+    t[n]=c>>>0;
+  }
+  return t;
+})();
+function crc32(bytes){
+  let c=0xFFFFFFFF;
+  for(let i=0;i<bytes.length;i++) c=crcTable[(c^bytes[i])&0xFF]^(c>>>8);
+  return (c^0xFFFFFFFF)>>>0;
+}
+function u16(n){ return new Uint8Array([n&255,(n>>>8)&255]); }
+function u32(n){ return new Uint8Array([n&255,(n>>>8)&255,(n>>>16)&255,(n>>>24)&255]); }
+function concat(arrs){
+  const len=arrs.reduce((s,a)=>s+a.length,0), out=new Uint8Array(len);
+  let off=0; for(const a of arrs){out.set(a,off);off+=a.length;} return out;
+}
+function dosDateTime(date=new Date()){
+  let year=Math.max(1980,date.getFullYear());
+  const time=(date.getHours()<<11)|(date.getMinutes()<<5)|Math.floor(date.getSeconds()/2);
+  const day=(year-1980)<<9 | (date.getMonth()+1)<<5 | date.getDate();
+  return {time, day};
+}
+async function makeZip(entries, progressCb){
+  const enc=new TextEncoder();
+  const locals=[], centrals=[];
+  let offset=0;
+  const dt=dosDateTime();
+  for(let i=0;i<entries.length;i++){
+    const e=entries[i];
+    const nameBytes=enc.encode(e.name);
+    const data=new Uint8Array(await e.file.arrayBuffer());
+    const crc=crc32(data);
+    const local=concat([
+      u32(0x04034b50),u16(20),u16(0x0800),u16(0),
+      u16(dt.time),u16(dt.day),u32(crc),u32(data.length),u32(data.length),
+      u16(nameBytes.length),u16(0),nameBytes,data
+    ]);
+    locals.push(local);
+    const central=concat([
+      u32(0x02014b50),u16(20),u16(20),u16(0x0800),u16(0),
+      u16(dt.time),u16(dt.day),u32(crc),u32(data.length),u32(data.length),
+      u16(nameBytes.length),u16(0),u16(0),u16(0),u16(0),u32(0),u32(offset),
+      nameBytes
+    ]);
+    centrals.push(central);
+    offset += local.length;
+    if(progressCb) progressCb((i+1)/entries.length);
+    await new Promise(r=>setTimeout(r,0));
+  }
+  const centralData=concat(centrals);
+  const end=concat([
+    u32(0x06054b50),u16(0),u16(0),u16(entries.length),u16(entries.length),
+    u32(centralData.length),u32(offset),u16(0)
+  ]);
+  return new Blob([...locals,centralData,end],{type:'application/zip'});
+}
+
+function downloadBlob(blob, filename){
+  const a=document.createElement('a');
+  const url=URL.createObjectURL(blob);
+  a.href=url; a.download=filename; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+function todayStr(){
+  const d=new Date(), p=n=>String(n).padStart(2,'0');
+  return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`;
+}
+
+document.getElementById('exportZip').addEventListener('click', async ()=>{
+  const entries=[];
+  students.forEach(s=>{
+    const fs=filesByStudent.get(s.name)||[];
+    fs.forEach((f,idx)=>{
+      const ext=safeExt(f);
+      const base=fs.length===1 ? s.name : `${s.name}-${idx+1}`;
+      entries.push({name:base+ext,file:f});
+    });
+  });
+  if(!entries.length){ alert('还没有上传任何作文图片。'); return; }
+
+  const missing=students.filter(s=>(filesByStudent.get(s.name)||[]).length===0);
+  if(missing.length){
+    const ok=confirm(`还有 ${missing.length} 位学生未上传图片。\n\n未上传：${missing.map(s=>s.name).join('、')}\n\n仍然导出吗？`);
+    if(!ok) return;
+  }
+  const modal=document.getElementById('modal');
+  const bar=document.getElementById('progressBar');
+  const text=document.getElementById('progressText');
+  modal.classList.add('show');
+  bar.style.width='0%';
+  text.textContent=`正在处理 0 / ${entries.length} 张图片……`;
+  try{
+    const zip=await makeZip(entries, p=>{
+      const done=Math.round(p*entries.length);
+      bar.style.width=(p*100).toFixed(0)+'%';
+      text.textContent=`正在处理 ${done} / ${entries.length} 张图片……`;
+    });
+    text.textContent='生成完成，正在下载……';
+    downloadBlob(zip,`402班作文拍照_${todayStr()}.zip`);
+    setTimeout(()=>modal.classList.remove('show'),600);
+  }catch(err){
+    console.error(err);
+    modal.classList.remove('show');
+    alert('生成 ZIP 时出现错误：'+err.message);
+  }
+});
+
+render();
+</script>
+</body>
+</html>
